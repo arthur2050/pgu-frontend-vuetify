@@ -1,70 +1,73 @@
 <template>
 <div class="auth__page-register">
     <v-row class="d-flex justify-center">
-        <v-col lg="3">
+        <v-col lg="3"
+               cols="9">
             <span class="subtitle-1">
-                Регистрация
+                {{$t('registration')}}
             </span>
-            <v-text-field v-model="name" label="Введите ваш ник" />
-            <v-text-field v-model="email" label="Введите адрес электронной почты" />
-            <v-text-field v-model="password" label="Придумайте пароль" />
-            <v-text-field v-model="phone" label="Введите номер телефона" />
-            <v-btn class="auth__button" color="#41b883" @click.prevent="register">Зарегистрироваться</v-btn>
+            <v-text-field v-model="name" 
+                         :label="$t('name')" 
+                         :error-messages="veeErrors.collect('name')"/>
+            <v-text-field v-model="surname" :label="$t('surName')"/>
+            <v-text-field v-model="patronymic" :label="$t('patronymic')"/>
+            <v-text-field v-model="email" 
+                          :label="$t('email')" 
+                          :error-messages="veeErrors.collect('email')"/>
+            <v-text-field v-model="password" 
+                          :label="$t('password')"
+                          :error-messages="veeErrors.collect('password')"/>
+            <v-text-field v-model="phone" :label="$t('phone')" />
+            <v-btn class="auth__button" color="#41b883" @click.prevent="register">{{$t('acceptSignUp')}}</v-btn>
         </v-col>
     </v-row>
-    <v-snackbar height="100" v-model="snackbar.show" :centered="true">
-        <span>{{snackbar.message}}</span>
-        <template #action>
-            <v-btn
-            color="red"
-            text
-            @click="snackbar.show = false"
-            >
-            Закрыть
-            </v-btn>
-        </template>
-    </v-snackbar>
 </div>
 </template>
 
 <script>
+import {API_URL} from "@/config";
+
 export default {
     name : 'register',
     data() {
         return {
+            loading: false,
             name: '',
             email: '',
             password: '',
+            surname: '',
+            patronymic: '',
             phone: '',
-            snackbar: {
-                show: false,
-                mode: undefined, // success or fail
-                message: ''
-            }
         }
     },
     methods: {
         async register() {
+            this.$store.dispatch('app/setOverlay', true);
+            this.veeErrors.clear();
             let form = new FormData()
             form.append('name', this.name)
             form.append('email', this.email)
             form.append('password', this.password)
+            form.append('surname', this.surname)
+            form.append('patronymic', this.patronymic)
             form.append('phone', this.phone)
-            await this.axios.post('register', form).then(() => {
-                this.$router.push('/login')
-            }).catch(() => {
-                if(!this.snackbar.show) {
-                    this.snackbar = {
-                        ...this.snackbar,
-                        show: true,
-                        mode: 'fail',
-                        message: 'Не удалось зарегистрироваться! Возможно, пользователь с данным e-mail уже существует'
-                    }
-                }
-            })
+            this.loading = true;
+            await this.API.postWithoutAuth(API_URL+'/register', form).then(() => {
+                this.$router.push('/login');
+            }).catch((error)  => {
+                this.$validationParser(error, this.veeErrors);
+                console.log(error.response.data);
+                console.log(error.toJSON());
+                console.log(this.veeErrors);
+                this.$store.dispatch('snackbar/add', {color: 'error', content: 'errorRegistration'});
+            });
+            this.loading = false;
+            console.log(this.$store.state);
+            this.$store.dispatch('app/setOverlay', false);
         }
     }
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+</style>

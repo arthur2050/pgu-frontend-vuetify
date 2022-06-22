@@ -1,61 +1,60 @@
 <template>
 <div class="auth__page-login">
     <v-row class="d-flex justify-center">
-        <v-col lg="3">
+        <v-col lg="3"
+               cols="9">
             <span class="subtitle-1">
-                Вход в систему
+                {{$t('loginSystem')}}
             </span>
-            <v-text-field v-model="email" label="Введите свой адрес электронной почты" />
-            <v-text-field v-model="password" label="Введите пароль от аккаунта" />
-            <v-btn class="auth__button" color="#41b883" @click.prevent="login">Войти</v-btn>
-            <v-snackbar height="100" v-model="snackbar.show" :centered="true">
-                <span>{{snackbar.message}}</span>
-                <template #action>
-                    <v-btn
-                    color="red"
-                    text
-                    @click="snackbar.show = false"
-                    >
-                    Закрыть
-                    </v-btn>
-                </template>
-            </v-snackbar>
+            <v-text-field v-model="email" :label="$t('inputEmailAddress')" />
+            <v-text-field v-model="password" 
+                          :label="$t('inputPassword')" 
+                          :append-icon="showPass ? 'mdi-eye' : 'mdi-eye-off'"
+                          :type="showPass ? 'text' : 'password'"
+                          @click:append="showPass = !showPass"/>
+            <v-btn class="auth__button" color="#41b883" @click.prevent="login">{{$t("acceptSignIn")}}</v-btn>
         </v-col>
     </v-row>
 </div>
 </template>
 
 <script>
+
+import {API_URL} from "@/config";
 export default {
     name : 'login',
     data() {
         return {
+            showPass:false,
+            loading: false,
             email: '',
             password: '',
             snackbar: {
                 show: false,
                 mode: undefined, // success or fail
                 message: ''
-            }
+            },
         }
     },
     methods: {
         async login() {
+            this.$store.dispatch('app/setOverlay', true);
+            console.log(this.$store);
             let form = new FormData()
             form.append('email', this.email)
             form.append('password', this.password)
-            await this.axios.post('login', form).then(() => {
-                this.$router.push('/')
+            this.loading = true;
+            console.log(this.API);
+            await this.API.postWithoutAuth(API_URL+'/login',form).then((response) => {
+                this.$store.commit('user/setUser', response.data.user);
+                console.log(response.data);
+                this.$store.commit('auth/setToken', response.data.token);
+                console.log(response);
+                this.$router.push('/');
             }).catch(() => {
-                if(!this.snackbar.show) {
-                    this.snackbar = {
-                        ...this.snackbar,
-                        show: true,
-                        mode: 'fail',
-                        message: 'Не удалось войти в систему! Проверьте введенные данные!'
-                    }
-                }
-            })
+            });
+            this.loading = false;
+            this.$store.dispatch('app/setOverlay', false);
         }
     }
 }
