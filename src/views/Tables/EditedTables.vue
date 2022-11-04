@@ -27,27 +27,8 @@
     },
     name: 'EditedTables',
     async created () {
-      this.loaded = false;
-      this.$store.dispatch('app/setOverlay', true);
-      await this.API.get(`lecturer/all/`).then((success) => {
-              let dataLecturers = success.data.lecturers;
-              let lecturers = [];
-              for(const keyLecturer in dataLecturers) {
-                let tempObject = Object.assign({}, dataLecturers[keyLecturer]);
-                let tempUser = Object.assign({}, dataLecturers[keyLecturer].user);
-                delete(tempUser.id);
-                lecturers.push(Object.assign(tempObject ,tempUser));
-              }
-              console.log(success);
-              console.log(lecturers);
-              this.items = lecturers;
-            }).catch((error)  => {
-              console.log(error);
-                this.$store.dispatch('snackbar/add', {color: 'error', content: 'failedGetLecturers'});
-            });
-            console.log(this.items);
-            this.loaded = true;
-      this.$store.dispatch('app/setOverlay', false);
+        console.log(this);
+        this.inititalize();
     },
     data() {
       return {
@@ -113,6 +94,7 @@
           {"objectName": "cardImage", "objectProperty":"name", "objectType":"avatar" }
         ],
         exampleHandlers: {
+          parentContext: this,
           deleteItem: async function(lecturerId, context) {
             await context.API.delete(`lecturer/delete/${lecturerId}`).then((success) => {
               console.log(success);
@@ -124,7 +106,11 @@
             console.log("delete item");
           },
           editItem: async function(lecturer, lecturerId, context) {
+            console.log(context.veeErrors);
+            console.log('this contesxt');
+            console.log(context);
             context.veeErrors.clear();
+            console.log(lecturerId);
             console.log(lecturer);
             let form = FormDataHelper.createFromObject(lecturer);
             console.log(form);
@@ -134,17 +120,23 @@
             form.set('conferencesCount', form.get('conferencesCount') !== 'null' ? form.get('conferencesCount') : 0);
             form.set('diplomaProjectsCount', form.get('diplomaProjectsCount') !== 'null' ? form.get('diplomaProjectsCount') : 0);
             console.log(form.get('publicationsCount'));
-            await context.API.post(`lecturer/edit/${lecturerId}`, form).then((response) => {
+            console.log(this);
+            // console.log("edit item");
+            return await context.API.post(`lecturer/edit/${arguments[1]}`, form).then((response) => {
               console.log(response);
               if (response.data.success == true) {
-                context.close()
+                console.log("response good");
+                // context.close()
+                // this.parentContext.inititalize();
+                // context.clearEditedItem(); //очистили редактируемый this.editedItem элемент
+                // context.close();//только потом закрыли диалог
+                return new Promise(resolve => resolve(response));
               }
             }).catch((error)  => {
                 context.$validationParser(error, context.veeErrors);
                 context.$store.dispatch('snackbar/add', {color: 'error', content: 'failedAddLecturer'});
-                context.stop();
+                context.stop();//стоп чтоб дальше не шло редактирование
             });
-            console.log("edit item");
           },
           addItem: async function(lecturer, context) {
             context.veeErrors.clear();
@@ -156,18 +148,57 @@
             form.set('conferencesCount', form.get('conferencesCount') !== 'null' ? form.get('conferencesCount') : 0);
             form.set('diplomaProjectsCount', form.get('diplomaProjectsCount') !== 'null' ? form.get('diplomaProjectsCount') : 0);
             console.log(form.get('publicationsCount'));
-            await context.API.post(`lecturer/add/`, form).then((response) => {
+            // let thisComponentInit = this.inititalize.bind(this);
+            console.log("add item");
+            return await context.API.post(`lecturer/add/`, form).then((response) => {
               if (response.data.success == true) {
-                context.close()
+                console.log(this);
+                // this.parentContext.inititalize();
+                //рано закрывать диалог поскольку ещё служебные действия для очистки текущего элемента не завершились
+                //id терялась редактируемого элемента поскольку в close метоеде this.editedItem присваивались default значения
+                //id нового элемента не было добавлено потомучто  я его не возращал полагаясь что оно такое же как и в таблица элемента(просто порядковый номер на фронте)
+                //закрытие можно убрать отсюда потомучто если будет ошибка мы просто стопнем
+                //элемент this.editedItem и закрыть диалог
+                //Но не просто закрыть а сначала сделать доп действия
+                // context.close()
+                // context.clearEditedItem(); //очистили редактируемый this.editedItem элемент
+                // context.close();//только потом закрыли диалог
+
               }
+              return new Promise(resolve => resolve(response));
             }).catch((error)  => {
                 context.$validationParser(error, context.veeErrors);
                 context.$store.dispatch('snackbar/add', {color: 'error', content: 'failedAddLecturer'});
                 context.stop();
             });
-            console.log("add item");
+
           }
         }
+      }
+    },
+    methods: {
+     async inititalize () {
+        this.loaded = false;
+        this.$store.dispatch('app/setOverlay', true);
+        await this.API.get(`lecturer/all/`).then((success) => {
+          let dataLecturers = success.data.lecturers;
+          let lecturers = [];
+          for(const keyLecturer in dataLecturers) {
+            let tempObject = Object.assign({}, dataLecturers[keyLecturer]);
+            let tempUser = Object.assign({}, dataLecturers[keyLecturer].user);
+            delete(tempUser.id);
+            lecturers.push(Object.assign(tempObject ,tempUser));
+          }
+          console.log(success);
+          console.log(lecturers);
+          this.items = lecturers;
+        }).catch((error)  => {
+          console.log(error);
+          this.$store.dispatch('snackbar/add', {color: 'error', content: 'failedGetLecturers'});
+        });
+        console.log(this.items);
+        this.loaded = true;
+        this.$store.dispatch('app/setOverlay', false);
       }
     }
   }

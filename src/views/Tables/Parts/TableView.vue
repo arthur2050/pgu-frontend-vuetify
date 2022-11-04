@@ -170,7 +170,7 @@
 			type: Object,
 			default: undefined
 		},
-		lablesButtons: {
+		labelsButtons: {
 			type: Object,
 			default: function () {
 				return {
@@ -221,7 +221,7 @@
 
     watch: {
       dialog (val) {
-        val || this.close()
+        val || this.close() || this.veeErrors.clear()
       },
       dialogDelete (val) {
         val || this.closeDelete()
@@ -342,18 +342,12 @@
         console.log(this.editedItem);
         console.log(this.defaultItem);
         this.dialog = false
-        this.$nextTick(() => {
-          this.editedItem = this.copyObjectsFromArray(this.defaultItem.properties)
-          this.editedIndex = -1
-        })
+        this.clearEditedItem();
       },
 
       closeDelete () {
         this.dialogDelete = false
-        this.$nextTick(() => {
-          this.editedItem = this.copyObjectsFromArray(this.defaultItem.properties)
-          this.editedIndex = -1
-        })
+        this.clearEditedItem();
       },
       async save () {
         this.loading = true;
@@ -367,21 +361,29 @@
           console.log(this.editedItem);
           if (this.editedIndex > -1) { //знаем что это редактирование
             console.log(this.editedIndex);
-            await this.handlers.editItem(copyItemEdited, this.elementsTable[this.editedIndex].id, this);
+            console.log(this.elementsTable);
+            console.log(this.elementsTable[this.editedIndex].id);
+            const result = await this.handlers.editItem(copyItemEdited, this.elementsTable[this.editedIndex].id, this);
+            console.log(result.data.item.id);
+            copyItemEdited.id = result.data.item.id;
+            //запрос к бэку а дальше только манипуляция с с таблицей
+            //ну или не паримся и просто обновляем всю таблицу
             console.log(this.editedIndex);
-            for(const repItem of this.replaceViewingElementsItem) {
-              ObjectHelper.replaceObjectOnPropertyByName(copyItemEdited, repItem["objectName"],repItem["objectProperty"]);
-            }
+            this.replaceObjectsToProperties(copyItemEdited);
             console.log(copyItemEdited);
-
+            console.log('doing edit...');
             Object.assign(this.elementsTable[this.editedIndex], copyItemEdited)
           } else {
-            await this.handlers.addItem(copyItemEdited, this);
-            for(const repItem of this.replaceViewingElementsItem) {
-              ObjectHelper.replaceObjectOnPropertyByName(copyItemEdited, repItem["objectName"],repItem["objectProperty"]);
-            }
+            const result = await this.handlers.addItem(copyItemEdited, this);
+            console.log(result.data.item.id);
+            copyItemEdited.id = result.data.item.id;
+            console.log('doing add...');
+            this.replaceObjectsToProperties(copyItemEdited);
             this.elementsTable.push(copyItemEdited)
-          } 
+          }
+          //закроем в случае успеха и будет в try всё норм
+          this.clearEditedItem(); //очистили редактируемый this.editedItem элемент
+          this.close();//только потом закрыли диалог
         } finally {
           this.loading = false;
         }
@@ -396,6 +398,17 @@
       stop() {
         this.loading = false;
         throw "stop";
+      },
+      replaceObjectsToProperties(editedItem) { //в каачестве параметра принимает нужный нам эелемент в котором необходимо сделать замену
+        for(const repItem of this.replaceViewingElementsItem) {
+          ObjectHelper.replaceObjectOnPropertyByName(editedItem, repItem["objectName"],repItem["objectProperty"]);
+        }
+      },
+      clearEditedItem() {
+        this.$nextTick(() => {
+          this.editedItem = this.copyObjectsFromArray(this.defaultItem.properties)
+          this.editedIndex = -1
+        })
       }
     },
   }

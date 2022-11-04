@@ -1,14 +1,14 @@
 const ObjectHelper = {
-	replaceObjectOnPropertyByName(structureConatinObject, objectName, propertyName) {
-		console.log(structureConatinObject,objectName,propertyName);
-		if(structureConatinObject[objectName] == undefined || structureConatinObject[objectName] == null) {
+	replaceObjectOnPropertyByName(structureContainObject, objectName, propertyName) {
+		console.log(structureContainObject,objectName,propertyName);
+		if(structureContainObject[objectName] == undefined || structureContainObject[objectName] == null) {
 			return objectName;
 		}
-		if( structureConatinObject[objectName][propertyName] == undefined || structureConatinObject[objectName][propertyName] == null) {
+		if( structureContainObject[objectName][propertyName] == undefined || structureContainObject[objectName][propertyName] == null) {
 			throw `Can't find the property name ${propertyName} `;
 		}
-		console.log(structureConatinObject[objectName]);
-		structureConatinObject[objectName] = structureConatinObject[objectName][propertyName];
+		console.log(structureContainObject[objectName]);
+		structureContainObject[objectName] = structureContainObject[objectName][propertyName];
 	}
 }
 
