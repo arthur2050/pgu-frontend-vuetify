@@ -18,6 +18,16 @@
                           :label="$t('password')"
                           :error-messages="veeErrors.collect('password')"/>
             <v-text-field v-model="phone" :label="$t('phone')" />
+
+<!--          <v-file-input-->
+<!--              v-model="avatarPath"-->
+<!--              :error-messages="veeErrors.collect('avatarPath')"-->
+<!--              :rules="avatarRules"-->
+<!--              accept="image/png, image/jpeg, image/bmp"-->
+<!--              placeholder="Pick an avatar"-->
+<!--              prepend-icon="mdi-camera"-->
+<!--              :label="$t('avatarPath')"-->
+<!--          ></v-file-input>-->
             <v-btn class="auth__button" color="#41b883" @click.prevent="register">{{$t('acceptSignUp')}}</v-btn>
         </v-col>
     </v-row>
@@ -38,6 +48,10 @@ export default {
             surname: '',
             patronymic: '',
             phone: '',
+            avatarPath: null,
+            avatarRules: [
+              value => !value || typeof value == 'string' || value.size < 2000000 || 'Avatar size should be less than 2 MB!'
+            ],
         }
     },
     methods: {
@@ -51,6 +65,9 @@ export default {
             form.append('surname', this.surname)
             form.append('patronymic', this.patronymic)
             form.append('phone', this.phone)
+            if(this.avatarPath !== null ) {
+              form.append('avatarPath',  this.avatarPath )
+            }
             this.loading = true;
             await this.API.postWithoutAuth(API_URL+'/register', form).then(() => {
                 this.$router.push('/login');

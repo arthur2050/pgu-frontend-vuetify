@@ -4,6 +4,7 @@
     fluid
     tag="section"
   >
+
     <v-row justify="center">
       <v-col
         cols="12"
@@ -36,6 +37,19 @@
                     :label="$t('email')"
                     :error-messages="veeErrors.collect('email')"
                   />
+                </v-col>
+
+                <v-col
+                    cols="12"
+                    md="4"
+                >
+                  <v-select
+                      v-model="lang"
+                      :items="langs"
+                      :label="$t('lang')"
+                      item-text="name"
+                      item-value="code"
+                  ></v-select>
                 </v-col>
 
                 <v-col
@@ -81,19 +95,57 @@
         md="4"
       >
         <app-card class="mt-4 text-center">
-          <v-img
-            class="rounded-circle elevation-6 mt-n12 d-inline-block"
-            src="https://demos.creative-tim.com/vue-material-dashboard/img/marc.aba54d65.jpg"
-            width="128"
-          />
+          <v-file-input
+              v-show="false"
+              v-model="newUserImage"
+              :error-messages="veeErrors.collect('avatarPath')"
+              :rules="avatarRules"
+              accept="image/png, image/jpeg, image/bmp"
+              placeholder="Pick an avatar"
+          ></v-file-input>
+<!--          <input type="file" ref="inputFile" v-show="false" name="userImage">-->
+          <v-badge
+              :value="hover"
+              color="secondary"
+              :content="$t('changePhoto')"
+              right
+              transition="slide-x-transition"
+          >
+            <v-hover v-model="hover">
+              <v-img
+                  v-if="getUser.avatarPath !== null"
+                  class="rounded-circle elevation-6 mt-n12 d-inline-block"
+                  :src="userImage"
+                  width="128"
+                  @click="photoHandler"
+              ></v-img>
+              <v-avatar
+                  v-else
+                  color="primary"
+                  class="elevation-6 mt-n12"
+                  size="128"
+                  @click="photoHandler"
+              ><span class="white--text text-h1">{{ initialsUser() }}</span></v-avatar>
+            </v-hover>
+          </v-badge>
 
+
+<!--          <v-avatar-->
+<!--              size="156"-->
+<!--          >-->
+<!--            <v-img-->
+<!--                src="https://cdn.vuetifyjs.com/images/john.jpg"-->
+<!--                alt="John"-->
+<!--            >-->
+<!--            </v-img>-->
+<!--          </v-avatar>-->
           <v-card-text class="text-center">
             <h6 class="text-h6 mb-2 text--secondary">
               CEO / FOUNDER
             </h6>
 
             <h4 class="text-h4 mb-3 text--primary">
-              John Leider
+              {{ name }} {{ surname }}
             </h4>
 
             <p class="text--secondary">
@@ -130,10 +182,23 @@
 </template>
 
 <script>
+  import {
+    mapGetters,
+  } from 'vuex';
+  // import Vue from 'vue';
+  import {BASE_URL, API_URL} from "@/config";
+
   export default { 
     name: 'UserProfileView',
     data() {
         return {
+            langs: [],
+            newUserImage: null,
+            avatarRules: [
+              value => !value || typeof value == 'string' || value.size < 2000000 || 'Avatar size should be less than 2 MB!'
+            ],
+            hover: false,
+            userImage: null,
             loading: false,
             name: '',
             email: '',
@@ -141,14 +206,19 @@
             surname: '',
             patronymic: '',
             phone: '',
+            lang: null
         }
     },
     async created() {
-      this.name = this.$store.state.user.user.name;
-      this.email = this.$store.state.user.user.email;
-      this.surname = this.$store.state.user.user.surname;
-      this.phone = this.$store.state.user.user.phone;
-      this.patronymic = this.$store.state.user.user.patronymic; 
+      this.initialize();
+
+      console.log(this.userImage);
+      console.log(typeof this.userImage);
+    },
+    computed: {
+      ...mapGetters({
+        getUser: 'user/getUser',
+      }),
     },
     methods: {
       async editProfile() {
@@ -160,10 +230,20 @@
             form.append('surname', this.surname)
             form.append('phone', this.phone)
             form.append('patronymic', this.patronymic)
+            if( typeof this.lang == 'object' && this.lang !== null) {
+              form.append('lang', this.lang.code);
+            }
+            else {
+              form.append('lang', this.lang)
+            }
+
+            if(this.newUserImage !== null)
+            form.append('avatarPath', this.newUserImage)
             this.loading = true;
             await this.API.post(`change-user-profile/${this.$store.state.user.user.id}`, form).then((success) => {
               console.log(success);
              this.$store.commit('user/setUser', success.data.user);
+             this.initialize();
             }).catch((error)  => {
                 this.$validationParser(error, this.veeErrors);
                 this.$store.dispatch('snackbar/add', {color: 'error', content: 'failedProfileEdit'});
@@ -171,7 +251,42 @@
             this.loading = false;
             console.log(this.$store.state);
             this.$store.dispatch('app/setOverlay', false);
-        }
-    } 
+        },
+      photoHandler() {
+        let inputFile = this.$el.querySelector('input[type="file"]');
+        inputFile.click();
+      },
+      initialsUser() {
+        return this.name.slice(0,1).toUpperCase() + this.surname.slice(0,1).toUpperCase();
+      },
+      async initialize() {
+        const languages = await this.requestLanguages();
+        this.userImage = BASE_URL + '/uploads/' + this.getUser.avatarPath;
+        this.name = this.$store.state.user.user.name;
+        this.email = this.$store.state.user.user.email;
+        this.surname = this.$store.state.user.user.surname;
+        this.phone = this.$store.state.user.user.phone;
+        this.patronymic = this.$store.state.user.user.patronymic;
+        this.lang = {name: this.$t(this.$store.state.user.user.lang), code: this.$store.state.user.user.lang};
+        this.$i18n.locale = this.$store.state.user.user.lang ;
+        this.fillLanguages(languages);
+      },
+      async requestLanguages() {
+        return await this.API.get(`${API_URL}/lazy/langs`).then((success) => {
+            let languages = success.data.item;
+            return new Promise(resolve => resolve(languages))
+        }).catch((error)  => {
+          console.log(error)
+          this.$store.dispatch('snackbar/add', {color: 'error', content: 'failedProfileEdit'});
+        });
+      },
+      fillLanguages(languages) {
+        this.langs = [];
+        languages.forEach((lang) => {
+          console.log(this.$t(lang));
+          this.langs.push({name: this.$t(lang), code: lang})
+        });
+      }
+    }
   }
 </script>

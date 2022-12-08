@@ -34,5 +34,12 @@
   "publicationsCount": "Publications count",
   "projectsCount": "Projects count",
   "conferencesCount": "Сonferences count",
-  "diplomaProjectsCount": "Diploma projects count"
+  "diplomaProjectsCount": "Diploma projects count",
+  "changePhoto": "Change photo",
+  "role": "Role",
+  "lang": "Language",
+  "ru": "Russian",
+  "md": "Moldavian",
+  "ua": "Ukrainian",
+  "en": "English"
 }

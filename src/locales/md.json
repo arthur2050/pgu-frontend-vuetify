@@ -34,5 +34,12 @@
   "publicationsCount": "Publicațiile contează",
   "projectsCount": "Proiectele contează",
   "conferencesCount": "Conferințele contează",
-  "diplomaProjectsCount": "Proiectele de diplomă contează"
+  "diplomaProjectsCount": "Proiectele de diplomă contează",
+  "changePhoto": "Schimbare fotografie",
+  "role": "Rol",
+  "lang": "Limba",
+  "ru": "Rusă",
+  "md": "Moldovenesc",
+  "ua": "Ucrainean",
+  "en": "Engleză"
 }
