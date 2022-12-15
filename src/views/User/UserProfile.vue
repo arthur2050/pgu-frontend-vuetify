@@ -145,7 +145,7 @@
             </h6>
 
             <h4 class="text-h4 mb-3 text--primary">
-              {{ name }} {{ surname }}
+              {{ name }} {{ surname !== null ? surname: '' }}
             </h4>
 
             <p class="text--secondary">
@@ -187,6 +187,7 @@
   } from 'vuex';
   // import Vue from 'vue';
   import {BASE_URL, API_URL} from "@/config";
+  import {FormDataHelper} from "@/services/FormDataHelper";
 
   export default { 
     name: 'UserProfileView',
@@ -224,12 +225,16 @@
       async editProfile() {
             this.$store.dispatch('app/setOverlay', true);
             this.veeErrors.clear();
-            let form = new FormData()
-            form.append('name', this.name)
-            form.append('email', this.email)
-            form.append('surname', this.surname)
-            form.append('phone', this.phone)
-            form.append('patronymic', this.patronymic)
+            // let form = new FormData()
+            const user = {
+              'name': this.name,
+              'email': this.email,
+              'surname': this.surname,
+              'phone': this.phone,
+              'patronymic': this.patronymic,
+              'avatarPath': this.newUserImage
+            }
+            let form = FormDataHelper.createFromObject(user);
             if( typeof this.lang == 'object' && this.lang !== null) {
               form.append('lang', this.lang.code);
             }
@@ -237,8 +242,8 @@
               form.append('lang', this.lang)
             }
 
-            if(this.newUserImage !== null)
-            form.append('avatarPath', this.newUserImage)
+            // if(this.newUserImage !== null)
+            // form.append()
             this.loading = true;
             await this.API.post(`change-user-profile/${this.$store.state.user.user.id}`, form).then((success) => {
               console.log(success);
@@ -257,9 +262,10 @@
         inputFile.click();
       },
       initialsUser() {
-        return this.name.slice(0,1).toUpperCase() + this.surname.slice(0,1).toUpperCase();
+        return this.name.slice(0,1).toUpperCase() + (this.surname !== null ? this.surname.slice(0,1).toUpperCase(): '');
       },
       async initialize() {
+        console.log(`'over there ${this.getUser}`);
         const languages = await this.requestLanguages();
         this.userImage = BASE_URL + '/uploads/' + this.getUser.avatarPath;
         this.name = this.$store.state.user.user.name;

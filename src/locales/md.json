@@ -41,5 +41,12 @@
   "ru": "Rusă",
   "md": "Moldovenesc",
   "ua": "Ucrainean",
-  "en": "Engleză"
+  "en": "Engleză",
+  "dashboard": "Bord",
+  "tables": "Mese",
+  "user": "Utilizator",
+  "profile": "Profil",
+  "settings": "Setări",
+  "logout": "Deconectare",
+  "userProfile": "Profil utilizator"
 }

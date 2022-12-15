@@ -41,5 +41,12 @@
   "ru": "Russian",
   "md": "Moldavian",
   "ua": "Ukrainian",
-  "en": "English"
+  "en": "English",
+  "dashboard": "Dashboard",
+  "tables": "Tables",
+  "user": "User",
+  "profile": "Profile",
+  "settings": "Settings",
+  "logout": "Log out",
+  "userProfile": "User Profile"
 }

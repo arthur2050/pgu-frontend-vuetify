@@ -352,6 +352,7 @@
         form.append('selectedImage', this.userImage ? this.userImage : 0);
         await this.API.post(`change-user/${this.$store.state.user.user.id}`,form).then((response) => {
           console.log(response);
+          this.$store.commit('user/setUser', response.data.user);
         }).catch(() => {
         });
         this.loading = false;
